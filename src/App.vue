@@ -2,8 +2,8 @@
   <div id="app">
     <el-container>
       <el-header>
-        <h1>SQLite Schema Viewer</h1>
-        <p>Load a local SQLite database file to view its table schemas</p>
+        <h1>Amazon Q CLI History Inspector</h1>
+        <p>Load Amazon Q Developer CLI database file to view conversation history</p>
       </el-header>
       
       <el-main>
@@ -11,7 +11,7 @@
         <el-card class="upload-card" v-if="!database">
           <template #header>
             <div class="card-header">
-              <span>Select SQLite Database File</span>
+              <span>Select Amazon Q CLI Database File</span>
             </div>
           </template>
           
@@ -25,7 +25,7 @@
           >
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
             <div class="el-upload__text">
-              Drop SQLite file here or <em>click to upload</em>
+              Drop Amazon Q CLI database file here or <em>click to upload</em>
             </div>
             <template #tip>
               <div class="el-upload__tip">
@@ -50,7 +50,7 @@
                 <el-descriptions :column="2" border>
                   <el-descriptions-item label="File Name">{{ fileName }}</el-descriptions-item>
                   <el-descriptions-item label="File Size">{{ formatFileSize(fileSize) }}</el-descriptions-item>
-                  <el-descriptions-item label="Total Tables">{{ tables.length }}</el-descriptions-item>
+                  <el-descriptions-item label="Total Conversations">{{ conversations.length }}</el-descriptions-item>
                   <el-descriptions-item label="Status">
                     <el-tag type="success">Loaded Successfully</el-tag>
                   </el-descriptions-item>
@@ -59,59 +59,59 @@
             </el-col>
           </el-row>
 
-          <!-- Tables Section -->
+          <!-- Conversations Section -->
           <el-row :gutter="20" style="margin-top: 20px;">
             <el-col :span="24">
               <el-card>
                 <template #header>
                   <div class="card-header">
-                    <span>Table Schemas</span>
+                    <span>Conversation History</span>
                   </div>
                 </template>
                 
-                <el-collapse v-model="activeNames" accordion>
-                  <el-collapse-item 
-                    v-for="table in tables" 
-                    :key="table.name" 
-                    :title="`${table.name} (${table.columns.length} columns)`"
-                    :name="table.name"
-                  >
-                    <el-table :data="table.columns" style="width: 100%">
-                      <el-table-column prop="name" label="Column Name" width="200" />
-                      <el-table-column prop="type" label="Data Type" width="150" />
-                      <el-table-column prop="notnull" label="Not Null" width="100">
-                        <template #default="scope">
-                          <el-tag :type="scope.row.notnull ? 'danger' : 'info'" size="small">
-                            {{ scope.row.notnull ? 'Yes' : 'No' }}
-                          </el-tag>
-                        </template>
-                      </el-table-column>
-                      <el-table-column prop="pk" label="Primary Key" width="120">
-                        <template #default="scope">
-                          <el-tag v-if="scope.row.pk" type="warning" size="small">
-                            PK
-                          </el-tag>
-                        </template>
-                      </el-table-column>
-                      <el-table-column prop="dflt_value" label="Default Value">
-                        <template #default="scope">
-                          <code v-if="scope.row.dflt_value !== null">{{ scope.row.dflt_value }}</code>
-                          <span v-else class="text-muted">NULL</span>
-                        </template>
-                      </el-table-column>
-                    </el-table>
+                <div v-if="conversations.length === 0" class="no-data">
+                  <el-empty description="No conversations found in this database" />
+                </div>
+                
+                <el-table v-else :data="conversations" style="width: 100%" max-height="600">
+                  <el-table-column type="index" label="#" width="60" />
+                  <el-table-column prop="key" label="Conversation Path" min-width="300">
+                    <template #default="scope">
+                      <el-text class="conversation-path">{{ scope.row.key }}</el-text>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="Actions" width="120">
+                    <template #default="scope">
+                      <el-button 
+                        size="small" 
+                        @click="toggleConversationDetails(scope.row)"
+                        :type="scope.row.expanded ? 'danger' : 'primary'"
+                      >
+                        {{ scope.row.expanded ? 'Hide' : 'View' }}
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                
+                <!-- Conversation Details -->
+                <div v-for="conversation in conversations" :key="conversation.id">
+                  <el-card v-if="conversation.expanded" class="conversation-detail" style="margin-top: 20px;">
+                    <template #header>
+                      <div class="card-header">
+                        <span>{{ conversation.key }}</span>
+                        <el-button size="small" @click="conversation.expanded = false">Close</el-button>
+                      </div>
+                    </template>
                     
-                    <!-- Show CREATE TABLE statement -->
-                    <el-divider content-position="left">CREATE TABLE Statement</el-divider>
                     <el-input
-                      v-model="table.createStatement"
+                      v-model="conversation.value"
                       type="textarea"
-                      :rows="6"
+                      :rows="20"
                       readonly
-                      class="create-statement"
+                      class="conversation-content"
                     />
-                  </el-collapse-item>
-                </el-collapse>
+                  </el-card>
+                </div>
               </el-card>
             </el-col>
           </el-row>
@@ -135,7 +135,7 @@ export default {
     const database = ref(null)
     const fileName = ref('')
     const fileSize = ref(0)
-    const tables = ref([])
+    const conversations = ref([])
     const activeNames = ref([])
     const SQL = ref(null)
 
@@ -180,70 +180,117 @@ export default {
         fileName.value = file.name
         fileSize.value = file.size
         
-        // Load table schemas
-        await loadTableSchemas()
+        // Load conversations
+        await loadConversations()
         
-        ElMessage.success('Database loaded successfully!')
+        ElMessage.success('Amazon Q CLI database loaded successfully!')
       } catch (error) {
         console.error('Error loading database:', error)
-        ElMessage.error('Failed to load database file. Please ensure it\'s a valid SQLite file.')
+        if (error.message.includes('malformed')) {
+          ElMessage.error('Database file appears to be corrupted or locked. Try closing Amazon Q CLI completely and copying the file to a different location first.')
+        } else {
+          ElMessage.error('Failed to load database file: ' + error.message)
+        }
       }
     }
 
-    const loadTableSchemas = async () => {
+    const loadConversations = async () => {
       if (!database.value) return
 
       try {
-        // Get all table names
-        const tableQuery = `
-          SELECT name FROM sqlite_master 
-          WHERE type='table' AND name NOT LIKE 'sqlite_%'
-          ORDER BY name
-        `
-        const tableResult = database.value.exec(tableQuery)
+        // First, let's see what tables exist
+        console.log('Checking database structure...')
+        const tablesQuery = `SELECT name FROM sqlite_master WHERE type='table'`
+        const tablesResult = database.value.exec(tablesQuery)
         
-        if (tableResult.length === 0) {
-          tables.value = []
+        const tableNames = tablesResult.length > 0 
+          ? tablesResult[0].values.map(row => row[0])
+          : []
+        
+        console.log('Available tables:', tableNames)
+        
+        if (!tableNames.includes('conversations')) {
+          ElMessage.warning(`No 'conversations' table found. Available tables: ${tableNames.join(', ') || 'none'}`)
+          conversations.value = []
           return
         }
 
-        const tableNames = tableResult[0].values.map(row => row[0])
-        const tableSchemas = []
+        // Check the structure of conversations table
+        console.log('Checking conversations table structure...')
+        const structureQuery = `PRAGMA table_info(conversations)`
+        const structureResult = database.value.exec(structureQuery)
+        
+        const columns = structureResult.length > 0 
+          ? structureResult[0].values.map(row => ({ name: row[1], type: row[2] }))
+          : []
+        
+        console.log('Conversations table columns:', columns)
 
-        // Get schema for each table
-        for (const tableName of tableNames) {
-          // Get column information
-          const columnQuery = `PRAGMA table_info(${tableName})`
-          const columnResult = database.value.exec(columnQuery)
-          
-          // Get CREATE TABLE statement
-          const createQuery = `
-            SELECT sql FROM sqlite_master 
-            WHERE type='table' AND name='${tableName}'
-          `
-          const createResult = database.value.exec(createQuery)
-          
-          const columns = columnResult[0]?.values.map(row => ({
-            cid: row[0],
-            name: row[1],
-            type: row[2],
-            notnull: Boolean(row[3]),
-            dflt_value: row[4],
-            pk: Boolean(row[5])
-          })) || []
+        // Try to count rows first
+        console.log('Counting conversations...')
+        const countQuery = `SELECT COUNT(*) FROM conversations`
+        const countResult = database.value.exec(countQuery)
+        const rowCount = countResult.length > 0 ? countResult[0].values[0][0] : 0
+        
+        console.log('Total conversations:', rowCount)
 
-          tableSchemas.push({
-            name: tableName,
-            columns: columns,
-            createStatement: createResult[0]?.values[0]?.[0] || ''
-          })
+        if (rowCount === 0) {
+          ElMessage.info('No conversations found in the database')
+          conversations.value = []
+          return
         }
 
-        tables.value = tableSchemas
+        // Try to get a small sample first
+        console.log('Getting sample conversations...')
+        const sampleQuery = `SELECT key, value FROM conversations LIMIT 5`
+        const sampleResult = database.value.exec(sampleQuery)
+        
+        if (sampleResult.length > 0) {
+          console.log('Sample data retrieved successfully, getting all conversations...')
+          
+          // Try without ORDER BY first to see if sorting is the issue
+          const conversationsQuery = `SELECT key, value FROM conversations`
+          const result = database.value.exec(conversationsQuery)
+          
+          if (result.length > 0 && result[0].values) {
+            // Transform the data and sort in JavaScript instead
+            const rawData = result[0].values.map((row, index) => ({
+              id: index + 1,
+              key: row[0] || '', // handle null keys
+              value: row[1] || '', // handle null values
+              expanded: false
+            }))
+            
+            // Sort in JavaScript to avoid SQL sorting issues
+            conversations.value = rawData.sort((a, b) => {
+              if (a.key < b.key) return -1
+              if (a.key > b.key) return 1
+              return 0
+            })
+
+            console.log(`Successfully loaded ${conversations.value.length} conversations`)
+          } else {
+            conversations.value = []
+          }
+        }
+
       } catch (error) {
-        console.error('Error loading table schemas:', error)
-        ElMessage.error('Failed to load table schemas')
+        console.error('Error loading conversations:', error)
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack
+        })
+        
+        if (error.message.includes('malformed')) {
+          ElMessage.error('Database appears to be corrupted. The file may be damaged or not a valid SQLite database.')
+        } else {
+          ElMessage.error('Failed to load conversation history: ' + error.message)
+        }
       }
+    }
+
+    const toggleConversationDetails = (conversation) => {
+      conversation.expanded = !conversation.expanded
     }
 
     const resetDatabase = () => {
@@ -253,7 +300,7 @@ export default {
       database.value = null
       fileName.value = ''
       fileSize.value = 0
-      tables.value = []
+      conversations.value = []
       activeNames.value = []
     }
 
@@ -269,9 +316,10 @@ export default {
       database,
       fileName,
       fileSize,
-      tables,
+      conversations,
       activeNames,
       handleFileSelect,
+      toggleConversationDetails,
       resetDatabase,
       formatFileSize
     }
@@ -328,6 +376,26 @@ export default {
 .text-muted {
   color: #909399;
   font-style: italic;
+}
+
+.conversation-path {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.conversation-content {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.conversation-detail {
+  border-left: 4px solid #409eff;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
 }
 
 .el-main {

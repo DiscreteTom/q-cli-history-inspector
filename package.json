@@ -1,5 +1,5 @@
 {
-  "name": "sqlite-schema-viewer",
+  "name": "q-cli-history-inspector",
   "private": true,
   "version": "0.0.0",
   "type": "module",

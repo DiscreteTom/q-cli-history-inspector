@@ -1,13 +1,13 @@
-# SQLite Schema Viewer
+# Amazon Q CLI History Inspector
 
-A Single Page Application (SPA) built with Vue 3, Vite, Element Plus, and SQL.js that allows users to load local SQLite database files and view their table schemas entirely in the browser.
+A Single Page Application (SPA) built with Vue 3, Vite, Element Plus, and SQL.js that allows users to load Amazon Q Developer CLI database files and view conversation history entirely in the browser.
 
 ## Features
 
-- 🗃️ Load local SQLite database files (.db, .sqlite, .sqlite3)
-- 📊 View table schemas with detailed column information
-- 🔍 Display column names, data types, constraints, and default values
-- 📝 Show CREATE TABLE statements for each table
+- 🗃️ Load Amazon Q Developer CLI database files
+- 💬 View conversation history from the 'conversations' table
+- 🔍 Display conversation folder paths and content
+- 📝 Expandable conversation details with full content view
 - 🎨 Clean and responsive UI with Element Plus components
 - 🔒 Completely client-side - no data is uploaded to any server
 
@@ -45,16 +45,22 @@ The `prebuild` script will automatically copy the required SQL.js files before b
 ## Usage
 
 1. Open the application in your browser
-2. Click on the upload area or drag and drop a SQLite database file
-3. View the database information and table schemas
-4. Expand any table to see its column details and CREATE TABLE statement
+2. Click on the upload area or drag and drop an Amazon Q CLI database file
+3. View the conversation history table showing all conversation paths
+4. Click "View" on any conversation to see its full content
 5. Click "Load Another File" to switch to a different database
 
-## Supported File Formats
+## Database Structure
 
-- `.db`
-- `.sqlite` 
-- `.sqlite3`
+The application reads from Amazon Q Developer CLI database files and specifically looks for:
+- **conversations table** with `key` (conversation folder path) and `value` (conversation data) columns
+- Other tables in the database: `migrations`, `history`, `auth_kv`, `state`
+
+## Important Notes
+
+- **File Locking**: Make sure to close Amazon Q CLI completely before loading database files
+- **File Copy**: If you get "malformed database" errors, try copying the database file to a different location first
+- **Database Location**: Amazon Q CLI databases are typically stored in `~/.aws/amazonq/` or similar directories
 
 ## Technology Stack
 
@@ -76,3 +82,15 @@ This application runs entirely in your browser. Your database files are:
 - Processed locally using SQL.js (SQLite compiled to WebAssembly)
 - Only accessible to your browser session
 - Automatically cleared when you refresh or close the page
+
+## Troubleshooting
+
+### "Database disk image is malformed" Error
+This usually happens when:
+1. Amazon Q CLI is still running and has the database file locked
+2. The database file is being actively written to
+
+**Solutions:**
+- Close Amazon Q CLI completely (`q quit` or kill all `q` processes)
+- Copy the database file to a temporary location and load the copy
+- Wait a few seconds after Amazon Q CLI operations before accessing the file
