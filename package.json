@@ -4,17 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run copy-sqljs",
     "dev": "vite",
+    "prebuild": "npm run copy-sqljs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "copy-sqljs": "mkdir -p public && cp node_modules/sql.js/dist/sql-wasm.js public/ && cp node_modules/sql.js/dist/sql-wasm.wasm public/"
   },
   "dependencies": {
-    "vue": "^3.4.0",
     "element-plus": "^2.4.0",
-    "sql.js": "^1.8.0"
+    "vue": "^3.4.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "sql.js": "^1.13.0",
     "vite": "^5.0.0"
   }
 }

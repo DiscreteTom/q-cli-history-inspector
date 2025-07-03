@@ -30,6 +30,8 @@ npm install
 npm run dev
 ```
 
+The `predev` script will automatically copy the required SQL.js files to the public folder before starting the development server.
+
 3. Open your browser and navigate to the URL shown in the terminal (usually `http://localhost:5173`)
 
 ### Building for Production
@@ -38,7 +40,7 @@ npm run dev
 npm run build
 ```
 
-The built files will be in the `dist` directory.
+The `prebuild` script will automatically copy the required SQL.js files before building. The built files will be in the `dist` directory.
 
 ## Usage
 
@@ -60,6 +62,12 @@ The built files will be in the `dist` directory.
 - **Vite** - Fast build tool and development server
 - **Element Plus** - Vue 3 component library
 - **SQL.js** - SQLite compiled to JavaScript via Emscripten
+
+## Architecture Notes
+
+- SQL.js is included as a dev dependency and automatically copied to the public folder during build/dev
+- The SQL.js files (`sql-wasm.js` and `sql-wasm.wasm`) in the public folder are gitignored as they're generated
+- This approach avoids ES module import issues while keeping dependencies properly managed
 
 ## Security & Privacy
 

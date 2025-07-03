@@ -125,7 +125,6 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
-import initSqlJs from 'sql.js'
 
 export default {
   name: 'App',
@@ -143,9 +142,23 @@ export default {
     // Initialize SQL.js
     onMounted(async () => {
       try {
-        SQL.value = await initSqlJs({
-          locateFile: file => `https://sql.js.org/dist/${file}`
-        })
+        // Wait for SQL.js to be available from the public folder
+        if (typeof window.initSqlJs !== 'undefined') {
+          SQL.value = await window.initSqlJs({
+            locateFile: file => `/${file}`
+          })
+        } else {
+          // Fallback: wait a bit and try again
+          setTimeout(async () => {
+            if (typeof window.initSqlJs !== 'undefined') {
+              SQL.value = await window.initSqlJs({
+                locateFile: file => `/${file}`
+              })
+            } else {
+              throw new Error('SQL.js not loaded')
+            }
+          }, 1000)
+        }
       } catch (error) {
         console.error('Failed to initialize SQL.js:', error)
         ElMessage.error('Failed to initialize SQL.js library')
