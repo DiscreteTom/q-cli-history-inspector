@@ -29,7 +29,14 @@
             </div>
             <template #tip>
               <div class="el-upload__tip">
-                Supported formats: .db, .sqlite, .sqlite3
+                <p><strong>Database Location Tips:</strong></p>
+                <ul style="text-align: left; margin: 10px 0;">
+                  <li><strong>Linux:</strong> <code>$HOME/.local/share/amazon-q/data.sqlite3</code></li>
+                  <li><strong>macOS:</strong> <code>$HOME/Library/Application Support/amazon-q/data.sqlite3</code></li>
+                </ul>
+                <p style="font-size: 12px; margin-top: 10px;">
+                  Supported formats: .db, .sqlite, .sqlite3
+                </p>
               </div>
             </template>
           </el-upload>
@@ -376,6 +383,35 @@ export default {
 .text-muted {
   color: #909399;
   font-style: italic;
+}
+
+.el-upload__tip {
+  color: #606266;
+  font-size: 14px;
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  border-left: 4px solid #409eff;
+}
+
+.el-upload__tip ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.el-upload__tip li {
+  margin: 5px 0;
+  list-style-type: disc;
+}
+
+.el-upload__tip code {
+  background-color: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #e6a23c;
 }
 
 .conversation-path {
