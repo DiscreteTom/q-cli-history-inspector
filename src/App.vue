@@ -87,6 +87,11 @@
                       <el-text class="conversation-path">{{ scope.row.key }}</el-text>
                     </template>
                   </el-table-column>
+                  <el-table-column label="Value Length" width="120" align="right">
+                    <template #default="scope">
+                      <el-tag size="small" type="info">{{ formatValueLength(scope.row.value) }}</el-tag>
+                    </template>
+                  </el-table-column>
                   <el-table-column label="Actions" width="120">
                     <template #default="scope">
                       <el-button 
@@ -354,6 +359,18 @@ export default {
       activeNames.value = []
     }
 
+    const formatValueLength = (value) => {
+      if (!value) return '0'
+      const length = value.length
+      if (length < 1024) {
+        return `${length} chars`
+      } else if (length < 1024 * 1024) {
+        return `${(length / 1024).toFixed(1)}K chars`
+      } else {
+        return `${(length / (1024 * 1024)).toFixed(1)}M chars`
+      }
+    }
+
     const formatFileSize = (bytes) => {
       if (bytes === 0) return '0 Bytes'
       const k = 1024
@@ -372,7 +389,8 @@ export default {
       toggleConversationDetails,
       downloadConversationJson,
       resetDatabase,
-      formatFileSize
+      formatFileSize,
+      formatValueLength
     }
   }
 }
