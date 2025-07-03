@@ -6,6 +6,11 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/q-cli-history-inspector/' : '/',
   build: {
     outDir: 'dist',
-    assetsDir: 'assets'
+    assetsDir: 'assets',
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
+    }
   }
 })

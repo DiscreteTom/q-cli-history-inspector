@@ -167,14 +167,20 @@ export default {
         // Wait for SQL.js to be available from the public folder
         if (typeof window.initSqlJs !== 'undefined') {
           SQL.value = await window.initSqlJs({
-            locateFile: file => `/${file}`
+            locateFile: file => {
+              // Use BASE_URL from Vite to handle GitHub Pages base path
+              return import.meta.env.BASE_URL + file
+            }
           })
         } else {
           // Fallback: wait a bit and try again
           setTimeout(async () => {
             if (typeof window.initSqlJs !== 'undefined') {
               SQL.value = await window.initSqlJs({
-                locateFile: file => `/${file}`
+                locateFile: file => {
+                  // Use BASE_URL from Vite to handle GitHub Pages base path
+                  return import.meta.env.BASE_URL + file
+                }
               })
             } else {
               throw new Error('SQL.js not loaded')
