@@ -106,7 +106,17 @@
                     <template #header>
                       <div class="card-header">
                         <span>{{ conversation.key }}</span>
-                        <el-button size="small" @click="conversation.expanded = false">Close</el-button>
+                        <div>
+                          <el-button 
+                            size="small" 
+                            type="success" 
+                            @click="downloadConversationJson(conversation)"
+                            style="margin-right: 10px;"
+                          >
+                            Download JSON
+                          </el-button>
+                          <el-button size="small" @click="conversation.expanded = false">Close</el-button>
+                        </div>
                       </div>
                     </template>
                     
@@ -296,6 +306,39 @@ export default {
       }
     }
 
+    const downloadConversationJson = (conversation) => {
+      try {
+        // Create a blob with the JSON content
+        const jsonContent = conversation.value
+        const blob = new Blob([jsonContent], { type: 'application/json' })
+        
+        // Create a download link
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        
+        // Generate filename from conversation key (remove path separators and add timestamp)
+        const safeName = conversation.key
+          .replace(/[/\\:*?"<>|]/g, '_') // Replace invalid filename characters
+          .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')
+        link.download = `conversation_${safeName}_${timestamp}.json`
+        
+        // Trigger download
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        // Clean up the URL object
+        URL.revokeObjectURL(url)
+        
+        ElMessage.success('Conversation JSON downloaded successfully!')
+      } catch (error) {
+        console.error('Error downloading conversation:', error)
+        ElMessage.error('Failed to download conversation JSON')
+      }
+    }
+
     const toggleConversationDetails = (conversation) => {
       conversation.expanded = !conversation.expanded
     }
@@ -327,6 +370,7 @@ export default {
       activeNames,
       handleFileSelect,
       toggleConversationDetails,
+      downloadConversationJson,
       resetDatabase,
       formatFileSize
     }
@@ -383,6 +427,19 @@ export default {
 .text-muted {
   color: #909399;
   font-style: italic;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header span {
+  font-weight: bold;
+  flex: 1;
+  margin-right: 10px;
+  word-break: break-all;
 }
 
 .el-upload__tip {
